@@ -84,11 +84,11 @@ class BoxPlot(Viz):
            
 class Scatter(Viz):
 
-    def __init__(self, x,y):
+    def __init__(self, data: pd.DataFrame):
         # self.data_len = len(column_data)
         # self.frequency, self.bins = np.histogram(column_data, bins=10, range=[0, column_data.max()], density=False)
-        self.x, self.y = x, y 
-        super().__init__(x, y)
+        self.x, self.y = data.T.values
+        super().__init__(data)
 
     def _compute_feature(self):
         """Calculates entropy"""
@@ -103,4 +103,3 @@ class Scatter(Viz):
     def plt(self):
         ## Printar linha y com a distribuição
         plt.scatter(self.x, self.y)
-                

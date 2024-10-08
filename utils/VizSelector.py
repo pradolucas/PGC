@@ -3,6 +3,7 @@ import pandas as pd
 from utils.plots import *
 
 
+from itertools import combinations
 class VizSelector():
     
     def __init__(self, df: pd.DataFrame, viz_type: str):
@@ -16,11 +17,22 @@ class VizSelector():
         else:
             column_pairs = combinations(df.columns, 2)
             for x, y in column_pairs:
-                self.vizs.append(viz_model(df[x], df[y]))
-            
+                self.vizs.append(viz_model(df[[x,y]]))
+
     def rank(self):
         vizs_sorted = sorted(self.vizs, key=lambda x: x.get_params()["feature"], reverse=True)
         return vizs_sorted
     
     def rank5(self):
         return self.rank()[:5]
+    
+    def plt(self):
+        fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+        for idx, obj in enumerate(self.rank5()):
+            # Scatter
+            # axs[idx].scatter(obj.x, obj.y, color='blue')
+            # axs[idx].set_title(f"{obj.column_name[0]} x {obj.column_name[1]}")
+            
+            # Hist
+            axs[idx].hist(obj.frequency, obj.bins, density=True)
+            axs[idx].set_title(f"{obj.column_name[0]}")
