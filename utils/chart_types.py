@@ -1,14 +1,14 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from utils import feature
+from utils.feature import feature
 from utils.Viz import Viz
 from scipy.stats import pearsonr
 
 
 class Histogram(Viz):
 
-    def __init__(self, column_data):
+    def __init__(self, column_data: pd.Series):
         #
         # self.data_len, self.data_freq = feature.get_count(column_data)
         self.data_len = len(column_data)
@@ -28,9 +28,13 @@ class Histogram(Viz):
         # return self.feature, self.data_len, self.data_freq
         return {"feature": self.feature, "params": (self.frequency, self.bins)}
 
-    def plt(self):
-        ## Printar linha y com a distribuição
-        plt.hist(self.frequency, self.bins, density=True)
+    def plt(self, **kwargs):
+        if 'axs' in kwargs :
+            kwargs["axs"].bar(self.bins[:-1], self.frequency, width=np.diff(self.bins), edgecolor="black", align="edge")
+        else:
+            ## Printar linha y com a distribuição
+            plt.bar(self.bins[:-1], self.frequency, width=np.diff(self.bins), edgecolor="black", align="edge")
+            # plt.stairs(self.frequency, self.bins, fill=True)
 
 class BoxPlot(Viz):
 
@@ -75,18 +79,18 @@ class BoxPlot(Viz):
         # return self.feature, self.data_len, self.data_freq
         return {"feature": self.feature, **self.params}
 
-    def plt(self):
-        ## Printar linha y com a distribuição
-         # plt.boxplot(column_data, patch_artist=True)  # fill with random  color
-        fig, ax = plt.subplots()
-        ax.bxp([self.params], showfliers=True, patch_artist=True, boxprops=dict(facecolor='lightblue'))
-        ax.set_xticks([1], [self.column_name], rotation=45) # Rotaciona o rótulo do eixo x 
+    def plt(self, **kwargs):
+        if 'axs' in kwargs :
+            kwargs["axs"].bar(self.bins[:-1], self.frequency, width=np.diff(self.bins), edgecolor="black", align="edge")
+        else:
+            # plt.boxplot(column_data, patch_artist=True)  # fill with random  color
+            fig, ax = plt.subplots()
+            ax.bxp([self.params], showfliers=True, patch_artist=True, boxprops=dict(facecolor='lightblue'))
+            ax.set_xticks([1], [self.column_name], rotation=45) # Rotaciona o rótulo do eixo x 
            
 class Scatter(Viz):
 
     def __init__(self, data: pd.DataFrame):
-        # self.data_len = len(column_data)
-        # self.frequency, self.bins = np.histogram(column_data, bins=10, range=[0, column_data.max()], density=False)
         self.x, self.y = data.T.values
         super().__init__(data)
 
@@ -97,9 +101,12 @@ class Scatter(Viz):
         return corr
 
     def get_params(self):
-        # return self.feature, self.data_len, self.data_freq
         return {"feature": self.feature, "params": None}
 
-    def plt(self):
-        ## Printar linha y com a distribuição
-        plt.scatter(self.x, self.y)
+    def plt(self, **kwargs):
+        if 'axs' in kwargs :
+            kwargs["axs"].scatter(self.x, self.y)
+        else:
+            ## Printar linha y com a distribuição
+            plt.scatter(self.x, self.y)
+                

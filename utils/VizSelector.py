@@ -1,24 +1,40 @@
 from itertools import combinations
 import pandas as pd
-from utils.plots import *
+from utils import Viz
+from utils.chart_types import Histogram, Scatter
+import matplotlib.pyplot as plt
 
 
-from itertools import combinations
 class VizSelector():
+
+    def __init__(self, vizs: Viz):
+        """Initialize with a list of visualization objects"""
+        self.vizs = vizs
+
+    @classmethod
+    def hist(cls, df: pd.DataFrame):
+        """Create VizSelector for 1D visualizations (e.g., Histograms)"""
+        vizs = [Histogram(data) for _, data in df.items()]
+        return cls(vizs)
+
+    @classmethod
+    def scatter(cls, df: pd.DataFrame):
+        """Create VizSelector for 2D visualizations (e.g., Scatter plots)"""
+        column_pairs = combinations(df.columns, 2)
+        vizs = [Scatter(df[[x, y]]) for x, y in column_pairs]
+        return cls(vizs)
+
+    @classmethod
+    def create(cls, df: pd.DataFrame, viz_type: str):
+        """Factory method to choose correct visualization type"""
+        model_map = {
+            "hist": cls.hist,
+            "scatter": cls.scatter
+        }
+        if viz_type not in model_map:
+            raise ValueError(f"Unknown visualization type: {viz_type}")
+        return model_map[viz_type](df)
     
-    def __init__(self, df: pd.DataFrame, viz_type: str):
-        self.vizs = []
-        model_map = {"hist": ("1D", Histogram), "scatter": ("2D", Scatter)}
-        dim, viz_model = model_map[viz_type]
-
-        if(dim == '1D'):
-            for _, data in df.items():
-                self.vizs.append(viz_model(data))
-        else:
-            column_pairs = combinations(df.columns, 2)
-            for x, y in column_pairs:
-                self.vizs.append(viz_model(df[[x,y]]))
-
     def rank(self):
         vizs_sorted = sorted(self.vizs, key=lambda x: x.get_params()["feature"], reverse=True)
         return vizs_sorted
@@ -27,12 +43,6 @@ class VizSelector():
         return self.rank()[:5]
     
     def plt(self):
-        fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+        _, axs = plt.subplots(1, 5, figsize=(20, 4))
         for idx, obj in enumerate(self.rank5()):
-            # Scatter
-            # axs[idx].scatter(obj.x, obj.y, color='blue')
-            # axs[idx].set_title(f"{obj.column_name[0]} x {obj.column_name[1]}")
-            
-            # Hist
-            axs[idx].hist(obj.frequency, obj.bins, density=True)
-            axs[idx].set_title(f"{obj.column_name[0]}")
+            obj.plt(axs=axs[idx])
