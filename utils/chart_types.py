@@ -31,9 +31,11 @@ class Histogram(Viz):
     def plt(self, **kwargs):
         if 'axs' in kwargs :
             kwargs["axs"].bar(self.bins[:-1], self.frequency, width=np.diff(self.bins), edgecolor="black", align="edge")
+            kwargs["axs"].set_title(f"{self.column_name[0]}")
         else:
             ## Printar linha y com a distribuição
             plt.bar(self.bins[:-1], self.frequency, width=np.diff(self.bins), edgecolor="black", align="edge")
+            plt.title(f"{self.column_name[0]}")
             # plt.stairs(self.frequency, self.bins, fill=True)
 
 class BoxPlot(Viz):
@@ -95,7 +97,7 @@ class Scatter(Viz):
         super().__init__(data)
 
     def _compute_feature(self):
-        """Calculates entropy"""
+        """Calculates corr"""
         # TODO timeit 
         corr = pearsonr(self.x, self.y)
         return corr
@@ -106,7 +108,8 @@ class Scatter(Viz):
     def plt(self, **kwargs):
         if 'axs' in kwargs :
             kwargs["axs"].scatter(self.x, self.y)
+            kwargs["axs"].set_title(f"{self.column_name[0]} x {self.column_name[1]}")
         else:
             ## Printar linha y com a distribuição
             plt.scatter(self.x, self.y)
-                
+            plt.title(f"{self.column_name[0]} x {self.column_name[1]}")
