@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC, ABCMeta
+from abc import abstractmethod, ABC
 from utils.feature import feature
 import pandas as pd
 
@@ -6,7 +6,7 @@ import pandas as pd
 class Viz(ABC):
     """
     Abstract base class for creating different types of visualizations.
-    
+
     Attributes:
     -----------
     data_type : tuple
@@ -16,26 +16,33 @@ class Viz(ABC):
     feature : Any
         The computed feature for the visualization (defined in child classes).
     """
-    
-    def __init__(self, column_data: pd.DataFrame | pd.Series):
-        
+
+    def __init__(
+        self, column_data: pd.DataFrame | pd.Series, feature_w_column_data=False
+    ):
+
         if isinstance(column_data, pd.Series):
             # Convert Series to DataFrame
             column_data = column_data.to_frame()
         elif not isinstance(column_data, pd.DataFrame):
             # Raise an error if the input is not a DataFrame or Series
             raise TypeError("Expected column_data to be a pandas DataFrame or Series")
-        
-        self.data_type   = tuple(feature.get_data_type(data) for _, data in column_data.items())
+
+        self.data_type = tuple(
+            feature.get_data_type(data) for _, data in column_data.items()
+        )
         self.column_name = tuple(column_name for column_name in column_data)
-        self.feature     = self._compute_feature()
-          
+        if feature_w_column_data:
+            self.feature = self._compute_feature(column_data)
+        else:
+            self.feature = self._compute_feature()
+
     @abstractmethod
     def get_params(self):
         """
         Abstract method to return the parameters of the visualization.
         This must be implemented by subclasses.
-        
+
         Returns:
         --------
         dict
@@ -43,11 +50,11 @@ class Viz(ABC):
         """
 
     @abstractmethod
-    def _compute_feature(self):
+    def _compute_feature(self, **kwargs):
         """
         Abstract method to compute a feature of the data.
         This must be implemented by subclasses.
-        
+
         Returns:
         --------
         Any
