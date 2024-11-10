@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from utils.feature import feature
+from utils.feature import Feature
 import pandas as pd
 
 
@@ -28,9 +28,7 @@ class Viz(ABC):
             # Raise an error if the input is not a DataFrame or Series
             raise TypeError("Expected column_data to be a pandas DataFrame or Series")
 
-        self.data_type = tuple(
-            feature.get_data_type(data) for _, data in column_data.items()
-        )
+        self.data_type = tuple(Feature.get_data_type(data) for _, data in column_data.items())
         self.column_name = tuple(column_name for column_name in column_data)
         if feature_w_column_data:
             self.feature = self._compute_feature(column_data)
