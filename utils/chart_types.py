@@ -1,18 +1,26 @@
-from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from utils.feature import feature
+from matplotlib import pyplot as plt
+from scipy.stats import pearsonr, skew
+from utils.feature import Feature
 from utils.Viz import Viz
-from scipy.stats import pearsonr
-from scipy.stats import skew
 
 
 class Histogram(Viz):
 
     def __init__(self, column_data: pd.Series):
+        self.accept_data_type = ["Continuous"]
+        self._data_type_check(column_data)
         self.data_len = len(column_data)
         self.frequency, self.bins = Histogram._calculate_hist_params(column_data)
         super().__init__(column_data)
+
+    def _data_type_check(self, column_data):
+        data_type = Feature.get_data_type(column_data)
+        if data_type not in self.accept_data_type:
+            raise TypeError(
+                f"Column '{column_data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
+            )
 
     # TODO replace frequency, bin to params in init
     @staticmethod
@@ -33,7 +41,7 @@ class Histogram(Viz):
         """Calculates entropy"""
         # TODO timeit
         # scipy_entr = feature.entropy_scipy(self.data_len, self.frequency)
-        numpy_entr = feature.entropy_numpy(self.data_len, self.frequency)
+        numpy_entr = Feature.entropy_numpy(self.data_len, self.frequency)
 
         # print(scipy_entr, numpy_entr)
         return numpy_entr
@@ -62,11 +70,22 @@ class Histogram(Viz):
 class BoxPlot(Viz):
 
     def __init__(self, column_data):
+        self.accept_data_type = ["Continuous", "Discrete"]
+        self._data_type_check(column_data)
+
         self.data_len = len(column_data)
-        self.params = BoxPlot.calculate_boxplot_params(column_data)
+        self.params = BoxPlot._calculate_boxplot_params(column_data)
         super().__init__(column_data, feature_w_column_data=True)
 
-    def calculate_boxplot_params(series: pd.Series) -> dict:
+    def _data_type_check(self, column_data):
+        data_type = Feature.get_data_type(column_data)
+        if data_type not in self.accept_data_type:
+            raise TypeError(
+                f"Column '{column_data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
+            )
+
+    @staticmethod
+    def _calculate_boxplot_params(series: pd.Series) -> dict:
         """
         Calculate the boxplot parameters (min, Q1, median, Q3, max, and outliers) from a pandas Series.
         """
@@ -89,30 +108,22 @@ class BoxPlot(Viz):
             "fliers": outliers,  # Outliers
         }
 
-    @classmethod
-    def skewness_test(cls, series: pd.Series, alpha=0.05):
+    @staticmethod
+    def skewness_test(series: pd.Series):
         # TODO turn in static method
+        # TODO change docstring
         """
-        Test the skewness of a Pandas Series and determine if it is statistically significant.
+        Give the skewness of a Pandas Serie
 
         Parameters:
             series (pd.Series): The data series to test.
-            alpha (float): Significance level for the test. Default is 0.05.
-
         Returns:
             float: The skewness of the series.
-            bool: True if skewness is statistically significant, False otherwise.
-            float: The p-value of the skewness test.
         """
         # Calculate skewness
         skewness_value = skew(series)[0]
 
-        # Perform skewness test
-        # statistic, p_value = skewtest(series)
-
-        # Determine if skewness is statistically significant
-        # is_significant = p_value < alpha
-        return abs(skewness_value)  # , statistic, p_value, is_significant
+        return abs(skewness_value)
 
     def outlier_percentage(self):
         n_outliers = len(self.params["fliers"])
@@ -147,9 +158,19 @@ class BoxPlot(Viz):
 class Scatter(Viz):
 
     def __init__(self, data: pd.DataFrame):
+        self.accept_data_type = ["Continuous"]
+        self._data_type_check(data)
         self.x, self.y = data.T.values
         super().__init__(data)
 
+    def _data_type_check(self, data):
+        for _, column_data in data.items():
+            data_type = Feature.get_data_type(column_data)
+            if data_type not in self.accept_data_type:
+                raise TypeError(
+                    f"Column '{column_data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
+                )
+    
     def _compute_feature(self):
         """Calculates corr"""
         # TODO timeit
