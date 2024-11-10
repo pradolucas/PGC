@@ -1,6 +1,6 @@
 from itertools import combinations
 import pandas as pd
-from utils import Viz
+from utils import viz
 from utils.chart_types import Histogram, Scatter, BoxPlot
 import matplotlib.pyplot as plt
 from math import ceil
@@ -8,7 +8,7 @@ from math import ceil
 
 class VizSelector:
 
-    def __init__(self, vizs: Viz):
+    def __init__(self, vizs: viz):
         """Initialize with a list of visualization objects"""
         self.vizs = vizs
         self.rank5 = None
@@ -76,13 +76,16 @@ class VizSelector:
         rank5 = self.get_rank5()
         n_vizs = len(rank5)
         n_cols = min(n_vizs, 5)  # for cases with less vizs than per row default value
-        _, axs = plt.subplots(1, n_cols, figsize=(4 * n_cols, 4))
+        _, axs = plt.subplots(1, n_cols, figsize=(5 * n_cols, 5))
         axs = (
             axs.flatten() if n_vizs > 1 else [axs]
         )  # Make axs iterable if there's only one plot
 
         for idx, obj in enumerate(rank5):
             obj.plt(axs=axs[idx], title_idx=idx)
+            
+        plt.tight_layout()
+        # plt.show() ## Apaga o output de interactive_dataframe
 
     def plt_all(self, per_row=5):
         if not self.vizs:

@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import pearsonr, skew
 from utils.feature import Feature
-from utils.Viz import Viz
+from utils.viz import Viz
 
 
 class Histogram(Viz):
