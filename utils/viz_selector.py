@@ -7,11 +7,30 @@ from math import ceil
 
 
 class VizSelector:
+    """
+    
+    ## Para inserir uma viz nova:
+    ## 1. Create a viz-child class in chart_types
+    ## 2. Create a classmethod for the class creation of this viz on VizSelector
+    ## 3. Map viz creation in create classmethod
 
+    """
     def __init__(self, vizs: viz):
-        """Initialize with a list of visualization objects"""
+        """
+        Initialize with a list of visualization objects
+        """
         self.vizs = vizs
         self.rank5 = None
+        self.ranked_vizs = None
+
+    @classmethod
+    def get_model_map(cls):
+        model_map = {
+            "hist": cls.hist,
+            "scatter": cls.scatter,
+            "box": cls.box,
+        }
+        return model_map
 
     @classmethod
     def hist(cls, df: pd.DataFrame):
@@ -53,21 +72,22 @@ class VizSelector:
     @classmethod
     def create(cls, df: pd.DataFrame, viz_type: str):
         """Factory method to choose correct visualization type"""
-        model_map = {"hist": cls.hist, "scatter": cls.scatter, "box": cls.box}
+        model_map = cls.get_model_map()
         if viz_type not in model_map:
             raise ValueError(f"Unknown visualization type: {viz_type}")
         return model_map[viz_type](df)
 
     def get_rank(self):
-        vizs_sorted = sorted(
-            self.vizs, key=lambda x: abs(x.get_params()["feature"]), reverse=True
-        )
-        return vizs_sorted
+        if not self.ranked_vizs:
+            self.ranked_vizs = sorted(
+                self.vizs, key=lambda x: abs(x.get_params()["feature"]), reverse=True
+            )
+        return self.ranked_vizs
 
     def get_rank5(self):
-        if self.rank5:
-            return self.rank5
-        return self.get_rank()[:5]
+        if not self.ranked_vizs:
+            return self.get_rank()[:5]
+        return self.ranked_vizs[:5]
 
     def plt(self):
         if not self.vizs:
@@ -83,15 +103,13 @@ class VizSelector:
 
         for idx, obj in enumerate(rank5):
             obj.plt(axs=axs[idx], title_idx=idx)
-            
+
         plt.tight_layout()
-        # plt.show() ## Apaga o output de interactive_dataframe
+        plt.show()  # Apaga o output de interactive_dataframe
 
     def plt_all(self, per_row=5):
         if not self.vizs:
             return
-
-        # vizs = self.get_rank()
 
         # Calculate the total number of Viz objects
         n_vizs = len(self.vizs)
@@ -130,7 +148,3 @@ class VizSelector:
         #         obj.plt(axs=axs[row_idx][col_idx], title_idx=idx_viz)
 
 
-## Para inserir uma viz nova:
-## 1. Create a viz-child class in chart_types
-## 2. Create a classmethod for the class creation of this viz on VizSelector
-## 3. Map viz creation in create classmethod

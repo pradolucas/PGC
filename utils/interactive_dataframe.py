@@ -32,7 +32,6 @@ class InteractiveDataFrame(pd.DataFrame):
             fname = f"plt_selection_{formatted_datetime}.pickle"
 
         selector_plt = self.get_viz(selector_plt)
-        print(fname, selector_plt)
         with open(fname, "wb") as f:
             pickle.dump(selector_plt, f)
 
@@ -41,10 +40,14 @@ class InteractiveDataFrame(pd.DataFrame):
         with open(fname, "rb") as f:
             file = pickle.load(f)
             return file
-    
+
+    # TODO
+    # def plt5(self, viz_type):
+    #     VizSelector.create(self, viz_type).plt()
+
     def plt_all(self, viz_type):
         VizSelector.create(self, viz_type).plt_all()
-        
+
     @staticmethod
     def plt_from_selector(selector_dict: dict, per_row=3):
         if not selector_dict:
@@ -78,12 +81,7 @@ class InteractiveDataFrame(pd.DataFrame):
         plt.show()
 
     def render_with_widgets(self):
-        # Dropdown options for plot type selection
-        drop_down_options = (
-            "hist",
-            "scatter",
-            "box",
-        )  # TODO: fetch model map from VizSelector
+        drop_down_options = VizSelector.get_model_map().keys()
         dropdown = widgets.Dropdown(
             options=drop_down_options,
             value=self.selected_plot,
@@ -126,11 +124,26 @@ class InteractiveDataFrame(pd.DataFrame):
 
             with output:
                 # Generate plot using VizSelector
-                obj = VizSelector.create(self, self.selected_plot)
-                top5 = obj.get_rank5()  # Get top 5 visualizations
                 if self.selected_plot not in self.pltd:
+                    obj = VizSelector.create(self, self.selected_plot)
+                    top5 = obj.get_rank5()  # Get top 5 visualizations
                     self.pltd[self.selected_plot] = top5
-                obj.plt()  # Generate the plot
+                    obj.plt()  # Generate the plot
+                else:
+                    top5 = self.pltd[self.selected_plot]
+                    n_vizs = len(top5)
+                    n_cols = min(n_vizs, 5)  # for cases with less vizs than per row default value
+                    _, axs = plt.subplots(1, n_cols, figsize=(5 * n_cols, 5))
+                    axs = (
+                        axs.flatten() if n_vizs > 1 else [axs]
+                    )  # Make axs iterable if there's only one plot
+
+                    for idx, obj in enumerate(top5):
+                        obj.plt(axs=axs[idx], title_idx=idx)
+
+                    plt.tight_layout()
+                    plt.show()
+                    
                 display(
                     f"Selected Plot: {self.selected_plot}"
                 )  # Display selected plot type
