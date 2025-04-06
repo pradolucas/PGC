@@ -36,19 +36,19 @@ class Histogram(Viz):
     """
 
     def __init__(self, column_data: pd.Series):
-        self.accept_data_type = ["Continuous"]
+        self.accept_data_type = ["Continuous", "Discrete", "Datetime"]
         self._data_type_check(column_data)
         self.data_len = len(column_data)
         self.frequency, self.bins = Histogram._calculate_hist_params(column_data)
         super().__init__(column_data)
 
-    def _data_type_check(self, column_data: pd.Series) -> None:
+    def _data_type_check(self, data: pd.Series) -> None:
         """
         Checks if the data type of the provided column is valid for histogram visualization.
 
         Parameters:
         -----------
-        column_data : pd.Series
+        data : pd.Series
             The data to check the type.
 
         Raises:
@@ -56,10 +56,10 @@ class Histogram(Viz):
         TypeError
             If the data type is not valid for histogram visualization.
         """
-        data_type = Feature.get_data_type(column_data)
+        data_type = Feature.get_data_type(data)
         if data_type not in self.accept_data_type:
             raise TypeError(
-                f"Column '{column_data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
+                f"Column '{data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
             )
 
     @staticmethod
@@ -134,7 +134,7 @@ class Histogram(Viz):
         )
         ax.set_title(f"{self.column_name[0]} {title_idx}")
 
-
+# TODO change doc
 class BoxPlot(Viz):
     """
     A class for creating box plots for continuous or discrete data.
@@ -151,7 +151,7 @@ class BoxPlot(Viz):
 
     _calculate_boxplot_params(series: pd.Series) -> dict
         Calculates the parameters for the box plot (min, Q1, median, Q3, max, outliers).
-
+    
     skewness_test(series: pd.Series) -> float
         Calculates the skewness of the data.
 
@@ -176,13 +176,13 @@ class BoxPlot(Viz):
         self.params = BoxPlot._calculate_boxplot_params(column_data)
         super().__init__(column_data, feature_w_column_data=True)
 
-    def _data_type_check(self, column_data: pd.Series) -> None:
+    def _data_type_check(self, data: pd.Series) -> None:
         """
         Checks if the data type of the provided column is valid for box plot visualization.
 
         Parameters:
         -----------
-        column_data : pd.Series
+        data : pd.Series
             The data to check the type.
 
         Raises:
@@ -190,10 +190,10 @@ class BoxPlot(Viz):
         TypeError
             If the data type is not valid for box plot visualization.
         """
-        data_type = Feature.get_data_type(column_data)
+        data_type = Feature.get_data_type(data)
         if data_type not in self.accept_data_type:
             raise TypeError(
-                f"Column '{column_data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
+                f"Column '{data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
             )
 
     @staticmethod
@@ -246,7 +246,7 @@ class BoxPlot(Viz):
             The absolute skewness value.
         """
         # Calculate skewness
-        skewness_value = skew(series)[0]
+        skewness_value = skew(series.dropna())[0]
 
         return abs(skewness_value)
 
@@ -341,7 +341,7 @@ class Scatter(Viz):
     """
 
     def __init__(self, data: pd.DataFrame):
-        self.accept_data_type = ["Continuous"]
+        self.accept_data_type = [("Continuous", "Continuous"), ("Discrete", "Continuous"), ("Continuous","Datatime")]
         self._data_type_check(data)
         self.x, self.y = data.T.values
         super().__init__(data)
@@ -360,11 +360,10 @@ class Scatter(Viz):
         TypeError
             If the data type is not valid for scatter plot visualization.
         """
-        for _, column_data in data.items():
-            data_type = Feature.get_data_type(column_data)
-            if data_type not in self.accept_data_type:
-                raise TypeError(
-                    f"Column '{column_data.name}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
+        data_type = tuple(data.apply(Feature.get_data_type))
+        if data_type not in self.accept_data_type:
+            raise TypeError(
+                    f"Columns '{list(data.columns.values)}' type {data_type} not one of the accepted data types: {self.accept_data_type}"
                 )
 
     def _compute_feature(self) -> float:
@@ -376,7 +375,11 @@ class Scatter(Viz):
         float
             The Pearson correlation coefficient.
         """
-        corr = pearsonr(self.x, self.y).statistic  # TODO timeit
+        df = pd.DataFrame({'x': self.x, 'y': self.y}).dropna()
+
+        # corr = pearsonr(df["x"], df["y"]).statistic
+        # corr = df.corr(method='pearson').iloc[0, 1]
+        corr = np.corrcoef(df["x"], df["y"])[0, 1]
         return corr
 
     def get_params(self) -> dict:
