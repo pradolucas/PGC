@@ -12,8 +12,8 @@ class VizSelector:
     """
     A class for selecting and managing different types of visualizations.
 
-    Methods for each type of visualization are provided as class methods and a factory method (`create`) 
-    is used to create the appropriate visualization based on the given type. The visualizations can be 
+    Methods for each type of visualization are provided as class methods and a factory method (`create`)
+    is used to create the appropriate visualization based on the given type. The visualizations can be
     sorted by feature and plotted in a grid layout.
 
     To add a new visualization:
@@ -237,6 +237,37 @@ class VizSelector:
 
         plt.tight_layout()
         plt.show()  # Disables stacked output from render_with_widgets
+    
+    def plt_topn(self, n, per_row: int = 5) -> None:
+        """
+        Plots top n visualizations in a grid layout.
+
+        Parameters:
+        -----------
+        per_row : int, optional
+            The number of visualizations per row (default is 5).
+        """
+        if not self.vizs:
+            return
+
+        ranked_vizs = self.get_rank()[0:n]
+        n_vizs = len(ranked_vizs)
+        n_rows = ceil(n_vizs / per_row)
+        n_cols = min(n_vizs, 5)  # for cases with less vizs than per row default value
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 4 * n_rows))
+        axs = (
+            axs.flatten() if n_vizs > 1 else [axs]
+        )  # Make axs iterable if there's only one plot
+
+        # Plot each Viz object in the grid
+        idx = 0
+        for viz_obj in ranked_vizs:
+            viz_obj.plt(axs=axs[idx])
+            idx += 1
+
+        # Remove any unused subplots
+        for i in range(idx, len(axs)):
+            fig.delaxes(axs[i])
 
     def plt_all(self, per_row: int = 5) -> None:
         """
@@ -277,11 +308,3 @@ class VizSelector:
 
         plt.tight_layout()
         plt.show()
-
-        # for row_idx in range(n_rows):
-        #     for col_idx in range(per_row):
-        #         idx_viz = 5 * row_idx + col_idx
-        #         if idx_viz >= n_vizs:
-        #             break
-        #         obj = self.vizs[idx_viz]
-        #         obj.plt(axs=axs[row_idx][col_idx], title_idx=idx_viz)
