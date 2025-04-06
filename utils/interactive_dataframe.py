@@ -133,6 +133,57 @@ class InteractiveDataFrame(pd.DataFrame):
             file = pickle.load(f)
             return file
 
+    def plt(self, viz_type: str, columns: list, per_row: int = 5):
+        """
+        Plots the a set of visualizations for a given plot type.
+
+        Parameters:
+        -----------
+        viz_type : str
+            The type of visualization to plot.
+        columns: list
+            Columns to be plotted
+        per_row : int, optional
+            The number of visualizations per row (default is 5).
+
+        Raises:
+        -------
+        ValueError
+            If the visualization type is not valid.
+        """
+        model_map = VizSelector.get_model_map()
+        if viz_type not in model_map:
+            raise ValueError(
+                f"Unknown visualization type: {viz_type} not {set(model_map.keys())}"
+            )
+        vizs_selector = model_map[viz_type](self[columns])
+        n_vizs = len(vizs_selector.vizs)
+
+        # Determine the grid size
+        n_rows = ceil(n_vizs / per_row)
+        n_cols = min(
+            n_vizs, per_row
+        )  # for cases with less vizs than per row default value
+
+        # Create subplots and handle single plot case
+        fig, axs = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 4 * n_rows))
+        axs = (
+            axs.flatten() if n_vizs > 1 else [axs]
+        )  # Make axs iterable if there's only one plot
+
+        # Plot each Viz object in the grid
+        idx = 0
+        for viz_obj in vizs_selector.vizs:
+            viz_obj.plt(axs=axs[idx])
+            idx += 1
+
+        # Remove any unused subplots
+        for i in range(idx, len(axs)):
+            fig.delaxes(axs[i])
+
+        plt.tight_layout()
+        plt.show()
+
     def plt5(self, viz_type: str) -> None:
         """
         Plots the top 5 visualizations for a given plot type.
@@ -147,12 +198,12 @@ class InteractiveDataFrame(pd.DataFrame):
         ValueError
             If the visualization type is not valid.
         """
-        model_map = VizSelector.get_model_map().keys()
+        model_map = VizSelector.get_model_map()
         if viz_type not in model_map:
             raise ValueError(
-                f"Unknown visualization type: {viz_type} not {set(model_map)}"
+                f"Unknown visualization type: {viz_type} not {set(model_map.keys())}"
             )
-        VizSelector.create(self, viz_type).plt_all()
+        VizSelector.create(self, viz_type).plt() ## TODO plt5()
 
     def plt_all(self, viz_type: str) -> None:
         """
@@ -174,6 +225,29 @@ class InteractiveDataFrame(pd.DataFrame):
                 f"Unknown visualization type: {viz_type} not {set(model_map)}"
             )
         VizSelector.create(self, viz_type).plt_all()
+
+    def plt_topn(self, viz_type: str, n: int) -> None:
+        """
+        Plots n best visualizations for a given plot type.
+
+        Parameters:
+        -----------
+        viz_type : str
+            The type of visualization to plot.
+        n: int 
+            Number of visualizations to plot.
+
+        Raises:
+        -------
+        ValueError
+            If the visualization type is not valid.
+        """
+        model_map = VizSelector.get_model_map().keys()
+        if viz_type not in model_map:
+            raise ValueError(
+                f"Unknown visualization type: {viz_type} not {set(model_map)}"
+            )
+        VizSelector.create(self, viz_type).plt_topn(n)
 
     @staticmethod
     def plt_from_selector(selector_dict: dict, per_row: int = 3) -> None:
@@ -260,7 +334,7 @@ class InteractiveDataFrame(pd.DataFrame):
         html_content = widgets.HTML(value=css + html_df)
 
         # Function to handle button click event
-        def on_button_click(b):
+        def on_button_click(_):
             self.selected_plot = dropdown.value  # Update selected plot type
             output.clear_output()  # Clear previous output
 
